@@ -69,3 +69,4 @@ After that, all I needed to do was fine-tune an existing model of Stable Diffusi
 - The dino header was trained with [Tiny AutoEncoder for Stable Diffusion](https://github.com/madebyollin/taesd). It probably would be better trained with the default encoder for SD 1.5
 - The Dino Header is a bunch of conv2D throw together, a proper header may be able to improve the model.
 - I have zero experiencie training SD models, so someone with more experience may be able to get better results. 
+- Instead of DINO, use a model like [Segment Anything](https://segment-anything.com/) to feed the prompts+latents to the loss function.
