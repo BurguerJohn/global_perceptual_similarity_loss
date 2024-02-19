@@ -15,7 +15,9 @@ transform = transforms.Compose([
         ])
 
 #Create a custom normalized function class
+#loss_func can also be nn.L1Loss(), nn.MSELoss(), or any similar, if you don't want to normalize the tensors.
 loss_func = NormalizedTensorLoss("l2")
+
 
 #Create the configuration for the main class
 config = GlobalPercConfig(start_weight=1.,
