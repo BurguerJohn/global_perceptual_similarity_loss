@@ -49,7 +49,8 @@ Since it do a lot more of complex calculations than L1Loss and MSELoss, you can 
 ## How to use:
 Open *ExampleWithDino.py* to see how to use the script. The example use DINOv2 by meta, but you can use any pre-trained model you like.
 
-**To use it with diffusion models** Check *ExampleWithDinoLatentSpace*. It use a custom header to work with latent space instead of RGB images.
+If you like to test training Stable Diffusion 1.5, first download the pre-trained headers for Dino here: [Link](https://drive.google.com/drive/folders/1qcSn9LFIJHeUedPXRAu5DOj5l2Ywxxcn?usp=sharing)
+After that look at the *ExampleWithDinoLatentSpace.py* script.
 
 ## Current state of the project:
 *GlobalPercLoss* is working very well, but I continue testing and trying to develop more optimized codes so it can run lighter during the backward pass. I am still testing various ways to normalize the tensors to improve the results for *NormalizedLoss*, which will likely undergo many changes.
@@ -63,6 +64,10 @@ I started to wonder if this technique would work with diffusion models, so I con
 First, I took the DinoV2 model and trained a new "head layer" for it. Instead of accepting RGB images, I trained it to accept the Latent Space of Stable Diffusion 1.5.
 
 After that, all I needed to do was fine-tune an existing model of Stable Diffusion 1.5.
+
+If you like to test training Stable Diffusion 1.5, first download the pre-trained headers for Dino here: [Link](https://drive.google.com/drive/folders/1qcSn9LFIJHeUedPXRAu5DOj5l2Ywxxcn?usp=sharing)
+After that look at the *ExampleWithDinoLatentSpace.py* script.
+
 ### Example Images:
 
 ### What can be improved for Diffusion Loss:
