@@ -3,10 +3,12 @@ import torch.nn as nn
 import numpy as np
 
 class NormalizedTensorLoss(nn.Module):
-    def __init__(self, type="l1", reduction="mean") -> torch.Tensor:
+    def __init__(self, type="l1", reduction="mean", min_max_handle="self") -> torch.Tensor:
         super().__init__()
         self.type = type
         self.reduction = reduction
+        self.min_max_handle = min_max_handle
+        self.base_values = {}
     
     
     def get_dims_based_on_tensor(self, tensor):
@@ -25,23 +27,33 @@ class NormalizedTensorLoss(nn.Module):
       else:
           return None
         
-    def min_max_normalization_combination(self, tensor_A, tensor_B, dims):
-      min_val_A = torch.amin(tensor_A, dim=dims, keepdim=True)
-      max_val_A = torch.amax(tensor_A, dim=dims, keepdim=True)
+    def min_max_normalization_combination(self, tensor_A, tensor_B, dims, id):
+      if self.min_max_handle == "self" or id not in self.base_values:
+        
+        min_val_A = torch.amin(tensor_A, dim=dims, keepdim=True)
+        max_val_A = torch.amax(tensor_A, dim=dims, keepdim=True)
 
-      min_val_B = torch.amin(tensor_B, dim=dims, keepdim=True)
-      max_val_B = torch.amax(tensor_B, dim=dims, keepdim=True)
+        min_val_B = torch.amin(tensor_B, dim=dims, keepdim=True)
+        max_val_B = torch.amax(tensor_B, dim=dims, keepdim=True)
 
-      min_val = torch.minimum(min_val_A, min_val_B)
-      max_val = torch.maximum(max_val_A, max_val_B) + 1e-5
+        min_val = torch.minimum(min_val_A, min_val_B)
+        max_val = torch.maximum(max_val_A, max_val_B) + 1e-5
 
-      tensor_A = (tensor_A - min_val) / (max_val - min_val)
-      tensor_B = (tensor_B - min_val) / (max_val - min_val)
+        if self.min_max_handle == "first":
+           self.base_values[id] = {"min": min_val.detach(), "max":max_val.detach()}
+        
+      if self.min_max_handle == "first":
+        tensor_A = (tensor_A - self.base_values[id]["min"]) / ( self.base_values[id]["max"] - self.base_values[id]["min"])
+        tensor_B = (tensor_B - self.base_values[id]["min"]) / ( self.base_values[id]["max"] - self.base_values[id]["min"])
+      else:
+        tensor_A = (tensor_A - min_val) / (max_val - min_val)
+        tensor_B = (tensor_B - min_val) / (max_val - min_val)
+        
       return tensor_A, tensor_B
 
-    def forward(self, A, B):
+    def forward(self, A, B, id=None):
       
-      A, B = self.min_max_normalization_combination(A, B, self.get_dims_based_on_tensor(A))
+      A, B = self.min_max_normalization_combination(A, B, self.get_dims_based_on_tensor(A), id)
 
       difference = A - B.detach()
 

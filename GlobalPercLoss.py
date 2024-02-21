@@ -72,6 +72,14 @@ class GlobalPercLoss(torch.nn.Module):
         for i in range(len(X_VAL)):
             A = X_VAL[i]
             B = Y_VAL[i]
-            loss += self.loss_func(A, B) * self.weights[i]
+            
+            forw_vars = len(inspect.signature(self.loss_func.forward).parameters)
+            
+            if forw_vars == 2:
+               loss += self.loss_func(A, B) * self.weights[i]
+            if forw_vars == 3:
+               loss += self.loss_func(A, B, str(i)) * self.weights[i]
+              
+           
 
         return loss
