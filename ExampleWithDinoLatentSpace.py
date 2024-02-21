@@ -50,9 +50,10 @@ def DinoWithLatentHeader(header_path, device="cpu"):
 model = DinoWithLatentHeader("/path/to/model/file/dino_header_rl.pkl")
 
 #Will transform the input before feeding it to Dino
+#Dino require a H,W multiple of 14, since we are using a latent of 64,64, we will add 10 pad to each side to make it 84,84
 transform = transforms.Compose([
-            
-        ])
+                    transforms.Pad(10, fill=0, padding_mode='constant')
+            ])
 
 #Create a custom normalized function class
 #loss_func can also be nn.L1Loss(), nn.MSELoss(), or any similar, if you don't want to normalize the tensors.
