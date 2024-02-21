@@ -2,29 +2,45 @@ class NormalizedTensorLoss(nn.Module):
     def __init__(self, type="l1", reduction="mean") -> torch.Tensor:
         super().__init__()
         self.type = type
-        self.reduction = reduction.lower()
-        self.norm_1D = torch.nn.InstanceNorm1d(None, affine=False)
-        self.norm_2D = torch.nn.InstanceNorm2d(None, affine=False)
-        self.norm_3D = torch.nn.InstanceNorm3d(None, affine=False)
+    
+    
+    def get_dims_based_on_tensor(self, tensor):
+      dims = tensor.dim()
+      if dims == 1:
+          return (0,)
+      elif dims == 2:
+          return (1,)
+      elif dims == 3:
+        return (2,)
+        #return (1, 2)
+      elif dims == 4:
+          return (2, 3)
+      elif dims == 5:
+          return (2, 3, 4)
+      else:
+          return None
+        
+        
+    def min_max_normalization_combination(self, tensor_A, tensor_B, dims):
+      min_val_A = torch.amin(tensor_A, dim=dims, keepdim=True)
+      max_val_A = torch.amax(tensor_A, dim=dims, keepdim=True)
+
+      min_val_B = torch.amin(tensor_B, dim=dims, keepdim=True)
+      max_val_B = torch.amax(tensor_B, dim=dims, keepdim=True)
+
+      min_val = torch.minimum(min_val_A, min_val_B)
+      max_val = torch.maximum(max_val_A, max_val_B) + 1e-5
+
+      tensor_A = (tensor_A - min_val) / (max_val - min_val)
+      tensor_B = (tensor_B - min_val) / (max_val - min_val)
+      return tensor_A, tensor_B
+
 
     def forward(self, A, B):
-      if A.dim() == 1:
-        A = nn.LayerNorm(A.shape[0],  elementwise_affine=False, bias=False)(A)
-        B = nn.LayerNorm(B.shape[0],  elementwise_affine=False, bias=False)(B)
-      elif A.dim() == 2 or A.dim() == 3:
-        A = self.norm_1D(A)
-        B = self.norm_1D(B)
-      elif A.dim() == 4:
-        A = self.norm_2D(A)
-        B = self.norm_2D(B)
-
-      elif A.dim() == 5:
-        A = self.norm_3D(A)
-        B = self.norm_3D(B)
+      
+      A, B = self.min_max_normalization_combination(A, B, self.get_dims_based_on_tensor(A))
 
       difference = A - B.detach()
-      average = (A.detach().abs() + B.detach().abs() ) + 1e-9
-      difference = difference / average
 
       if self.type == 'l1':
         difference = difference.abs()
