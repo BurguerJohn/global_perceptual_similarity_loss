@@ -1,7 +1,12 @@
+import torch
+import torch.nn as nn
+import numpy as np
+
 class NormalizedTensorLoss(nn.Module):
     def __init__(self, type="l1", reduction="mean") -> torch.Tensor:
         super().__init__()
         self.type = type
+        self.reduction = reduction
     
     
     def get_dims_based_on_tensor(self, tensor):
@@ -20,7 +25,6 @@ class NormalizedTensorLoss(nn.Module):
       else:
           return None
         
-        
     def min_max_normalization_combination(self, tensor_A, tensor_B, dims):
       min_val_A = torch.amin(tensor_A, dim=dims, keepdim=True)
       max_val_A = torch.amax(tensor_A, dim=dims, keepdim=True)
@@ -34,7 +38,6 @@ class NormalizedTensorLoss(nn.Module):
       tensor_A = (tensor_A - min_val) / (max_val - min_val)
       tensor_B = (tensor_B - min_val) / (max_val - min_val)
       return tensor_A, tensor_B
-
 
     def forward(self, A, B):
       

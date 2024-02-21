@@ -1,4 +1,8 @@
 from torchvision import transforms
+from NormalizedLoss import NormalizedTensorLoss
+from GlobalPercLoss import GlobalPercConfig, GlobalPercLoss
+
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -74,5 +78,5 @@ loss = GlobalPercLoss(model, config)
 #Latent Tensors have 4 channels so input is [B, 4, H, W]
 tensor_1 = torch.rand(1, 4, 64, 64)
 tensor_2 = torch.rand(1, 4, 64, 64)
-loss(tensor_1, tensor_2)
+print("Loss:", loss(tensor_1, tensor_2))
 

@@ -1,4 +1,7 @@
 from torchvision import transforms
+from NormalizedLoss import NormalizedTensorLoss
+from GlobalPercLoss import GlobalPercConfig, GlobalPercLoss
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -32,5 +35,5 @@ config = GlobalPercConfig(start_weight=1.,
 loss = GlobalPercLoss(model, config)
 tensor_1 = torch.rand(1, 3, 504, 504)
 tensor_2 = torch.rand(1, 3, 504, 504)
-loss(tensor_1, tensor_2)
+print("Loss:", loss(tensor_1, tensor_2))
 
