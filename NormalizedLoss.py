@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 
 class NormalizedTensorLoss(nn.Module):
-    def __init__(self, type="l1", reduction="mean", norm="minmax") -> torch.Tensor:
+    def __init__(self, type="l1", reduction="mean", norm="instancenorm") -> torch.Tensor:
         super().__init__()
         self.type = type
         self.reduction = reduction
@@ -17,7 +17,7 @@ class NormalizedTensorLoss(nn.Module):
             B = B.view(BA, C, -1)
 
       mean = (torch.mean(A, dim=-1, keepdim=True) + torch.mean(B, dim=-1, keepdim=True)) * 0.5
-      var = (torch.var(A, dim=-1, keepdim=True, correction=0) + torch.var(B, dim=-1, keepdim=True, correction=0)) * 0.5
+      var = (torch.var(A, dim=-1, keepdim=True, correction=1) + torch.var(B, dim=-1, keepdim=True, correction=1)) * 0.5
       sqred = torch.sqrt(var + 1e-5)
       A = (A - mean) / sqred
       B = (B - mean) / sqred
