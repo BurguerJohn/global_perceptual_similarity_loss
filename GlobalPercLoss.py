@@ -4,9 +4,8 @@ import torch.nn as nn
 import numpy as np
 
 class GlobalPercConfig():
-  def __init__(self, start_weight=1.0, end_weight=1.0, modules_to_hook=[], transform_normalization=None, loss_func=None, print_data=True):
-    self.start_weight = start_weight
-    self.end_weight = end_weight
+  def __init__(self, step_weight=1.0, modules_to_hook=[], transform_normalization=None, loss_func=None, print_data=True):
+    self.step_weight = step_weight
     self.modules_to_hook = modules_to_hook
     self.print_data = print_data
     self.transform_normalization = transform_normalization
@@ -42,12 +41,9 @@ class GlobalPercLoss(torch.nn.Module):
                 
         
         traverse_modules(self.model)
-
-        self.weights = np.linspace(config.start_weight, config.end_weight, count)
         
         if config.print_data:
           print(f"~ Total Layers Hook: {count}")
-          print(f"~ Weight for each Hook: ", self.weights)
 
 
         self.normalize = config.transform_normalization
@@ -69,17 +65,13 @@ class GlobalPercLoss(torch.nn.Module):
         Y_VAL = self.activations
 
         loss = 0
+        curr_weight = 1.
         for i in range(len(X_VAL)):
             A = X_VAL[i]
             B = Y_VAL[i]
             
-            forw_vars = len(inspect.signature(self.loss_func.forward).parameters)
-            
-            if forw_vars == 2:
-               loss += self.loss_func(A, B) * self.weights[i]
-            if forw_vars == 3:
-               loss += self.loss_func(A, B, str(i)) * self.weights[i]
+            loss += self.loss_func(A, B) * curr_weight
+            curr_weight += self.step_weight
               
-           
-
+  
         return loss
