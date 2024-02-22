@@ -39,5 +39,8 @@ config = GlobalPercConfig(start_weight=1.,
 loss = GlobalPercLoss(model, config)
 tensor_1 = torch.rand(1, 3, 504, 504)
 tensor_2 = torch.rand(1, 3, 504, 504)
-print("Loss:", loss(tensor_1, tensor_2))
+
+#Unlike nn.L1Loss(), nn.MSELoss(), the tensors will be feed to a model, so if you are using autocast, it may cause problems.
+with torch.cuda.amp.autocast(False):
+    print("Loss:", loss(tensor_1, tensor_2))
 
