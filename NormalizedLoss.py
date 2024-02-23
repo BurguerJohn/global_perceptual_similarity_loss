@@ -16,11 +16,11 @@ class NormalizedTensorLoss(nn.Module):
             A = A.view(BA, C, -1)
             B = B.view(BA, C, -1)
 
-      mean = (torch.mean(A, dim=-1, keepdim=True) + torch.mean(B, dim=-1, keepdim=True)) * 0.5
-      var = (torch.var(A, dim=-1, keepdim=True, correction=1) + torch.var(B, dim=-1, keepdim=True, correction=1)) * 0.5
-      sqred = torch.sqrt(var + 1e-5)
-      A = (A - mean) / sqred
-      B = (B - mean) / sqred
+      mean  = torch.mean(B, dim=-1, keepdim=True)
+      var   = torch.var(B, dim=-1, keepdim=True, correction=1) + 1e-5
+      std =  torch.sqrt(var)
+      A = (A - mean) / std
+      B = (B - mean) / std
       return A, B
       
     def min_max_normalization_combination(self, tensor_A, tensor_B):
@@ -29,17 +29,14 @@ class NormalizedTensorLoss(nn.Module):
             tensor_A = tensor_A.view(B, C, -1)
             tensor_B = tensor_B.view(B, C, -1)
 
-        min_val_A = torch.min(tensor_A, dim=-1, keepdim=True)[0]
-        max_val_A = torch.max(tensor_A, dim=-1, keepdim=True)[0]
+        min_val = torch.min(tensor_B, dim=-1, keepdim=True)[0]
+        max_val = torch.max(tensor_B, dim=-1, keepdim=True)[0] 
 
-        min_val_B = torch.min(tensor_B, dim=-1, keepdim=True)[0]
-        max_val_B = torch.max(tensor_B, dim=-1, keepdim=True)[0]
+        maxx = torch.abs(max_val - min_val) + 1e-2
 
-        min_val = (min_val_A + min_val_B) * 0.5
-        max_val = ((max_val_A + max_val_B) * 0.5) + 1e-5
-
-        tensor_A = (tensor_A - min_val) / (max_val - min_val)
-        tensor_B = (tensor_B - min_val) / (max_val - min_val)
+        
+        tensor_A = (tensor_A - min_val) / maxx
+        tensor_B = (tensor_B - min_val) / maxx
         return tensor_A, tensor_B
 
     def forward(self, A, B):

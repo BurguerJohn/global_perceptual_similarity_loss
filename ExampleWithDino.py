@@ -24,8 +24,9 @@ loss_func = NormalizedTensorLoss("l2")
 
 #Create the configuration for the main class
 #start_weight and end_weight are a multiplier for each hook on the model, from the first hook to the last.
-#1.0 for start_weight/end_weight usually give good results.
-#With start_weight=1. and end_weight=2. giving more focus to the last layers.
+#1.0 for start_weight/end_weight will make the same weight for all hooks.
+#With start_weight=1. and end_weight=2. will make the last hook have double the weight of the first one.
+#In my tests, managed to get good results even with end_weight=1600
 #modules_to_hook = [] will make the function try to hook on all available modules possible. 
 config = GlobalPercConfig(start_weight=1.,
                           end_weight=2.,
