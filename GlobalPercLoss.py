@@ -4,9 +4,11 @@ import torch.nn as nn
 import numpy as np
 
 class GlobalPercConfig():
-  def __init__(self, start_weight=1.0, end_weight=1.0, modules_to_hook=[], transform_normalization=None, loss_func=None, print_data=True):
+  def __init__(self, start_weight=1.0, end_weight=2.0, curve_force=0, modules_to_hook=[], transform_normalization=None, loss_func=None, print_data=True):
     self.start_weight = start_weight
     self.end_weight = end_weight
+    self.curve_force = curve_force
+    
     self.modules_to_hook = modules_to_hook
     self.print_data = print_data
     self.transform_normalization = transform_normalization
@@ -43,7 +45,10 @@ class GlobalPercLoss(torch.nn.Module):
         
         traverse_modules(self.model)
 
-        self.weights = np.linspace(config.start_weight, config.end_weight, count)
+        if config.curve_force == 0:
+            self.weights = np.linspace(config.start_weight, config.end_weight, count)
+        else:
+            self.weights = self.cosine_interpolation(config.start_weight, config.end_weight, config.curve_force, count)
         
         if config.print_data:
           print(f"~ Total Layers Hook: {count}")
@@ -52,7 +57,12 @@ class GlobalPercLoss(torch.nn.Module):
 
         self.normalize = config.transform_normalization
         self.loss_func = config.loss_func
-
+    
+    def cosine_interpolation(self, start, end, strength, num_points):
+        t = torch.linspace(0, 1, num_points)
+        t = (1 - torch.cos(t * math.pi)) / 2  # Apply cosine interpolation
+        t = t.pow(strength)  # Apply strength
+        return start + (end - start) * t
 
     def forward(self, X, Y):
 
