@@ -2,6 +2,7 @@ from ast import Yield
 import torch
 import torch.nn as nn
 import numpy as np
+import math
 
 class GlobalPercConfig():
   def __init__(self, start_weight=1.0, end_weight=2.0, curve_force=0, modules_to_hook=[], transform_normalization=None, loss_func=None, print_data=True):
