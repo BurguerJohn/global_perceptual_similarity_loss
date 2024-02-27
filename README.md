@@ -26,6 +26,7 @@ loss_func = NormalizedTensorLoss("l2")
 #Create the configuration for the main class
 config = GlobalPercConfig(start_weight=1.,
                           end_weight=2.,
+						  curve_force = 3,
                           modules_to_hook=[nn.Linear, nn.Conv2d, nn.ReLU, nn.GELU],
                           transform_normalization=transform,
                           loss_func=loss_func,
@@ -49,9 +50,22 @@ Since it do a lot more of complex calculations than L1Loss and MSELoss, you can 
 ## How to use:
 Open *ExampleWithDino.py* to see how to use the script. The example use DINOv2 by meta, but you can use any pre-trained model you like.
 
-If you like to test training Stable Diffusion 1.5, first download the pre-trained headers for Dino here: [Link](https://drive.google.com/drive/folders/1qcSn9LFIJHeUedPXRAu5DOj5l2Ywxxcn?usp=sharing)
+If you like to test training Stable Diffusion 1.5:
+- first download the pre-trained headers for Dino here: [Link](https://drive.google.com/drive/folders/1qcSn9LFIJHeUedPXRAu5DOj5l2Ywxxcn?usp=sharing)
+- After that look at the *ExampleWithDinoLatentSpace.py* script.
 
-After that look at the *ExampleWithDinoLatentSpace.py* script.
+
+## Weights parameters in GlobalPercConfig:
+The variables **start_weight**, **end_weight** and **curve_force** control the weight of each hook of the loss model.
+- **start_weight** Is the value of the first hook of the model
+- **end_weight** Is the value of the last hook of the model
+- **curve_force** Create a interpolation curve between **start_weight** and **end_weight**. Force: 1 it disable the curve.
+### Weight visualization:
+![Curve 1](/img/curves/1.png)
+![Curve 2](/img/curves/2.png)
+![Curve 3](/img/curves/3.png)
+
+
 
 ## Current state of the project:
 *GlobalPercLoss* is working very well, but I continue testing and trying to develop more optimized codes so it can run lighter during the backward pass. I am still testing various ways to normalize the tensors to improve the results for *NormalizedLoss*, which will likely undergo many changes.
