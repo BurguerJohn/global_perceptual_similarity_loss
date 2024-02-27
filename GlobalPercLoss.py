@@ -48,9 +48,11 @@ class GlobalPercLoss(torch.nn.Module):
 
         if config.curve_force == 0:
             self.weights = np.linspace(config.start_weight, config.end_weight, count)
+        elif config.start_weight <= config.end_weight:
+            #self.weights = self.cosine_interpolation(config.start_weight, config.end_weight, config.curve_force, count)
+            self.weights = self.ease_in_curve(config.start_weight, config.end_weight, config.curve_force, count)
         else:
-            self.weights = self.cosine_interpolation(config.start_weight, config.end_weight, config.curve_force, count)
-        
+            self.weights = self.ease_out_curve(config.start_weight, config.end_weight, config.curve_force, count)
         if config.print_data:
           print(f"~ Total Layers Hook: {count}")
           print(f"~ Weight for each Hook: ", self.weights)
@@ -64,6 +66,22 @@ class GlobalPercLoss(torch.nn.Module):
         t = (1 - torch.cos(t * math.pi)) / 2  # Apply cosine interpolation
         t = t.pow(strength)  # Apply strength
         return start + (end - start) * t
+    
+    def ease_in_curve(self, start_value, end_value, curve_strength, qtd_points):
+        # Generate a tensor of points from 0 to 1
+        points = torch.linspace(0, 1, qtd_points)
+        # Apply the ease-in curve (acceleration)
+        eased_points = points ** curve_strength
+        # Scale and offset the points to the desired range
+        return start_value + (end_value - start_value) * eased_points
+
+    def ease_out_curve(self, start_value, end_value, curve_strength, qtd_points):
+        # Generate a tensor of points from 0 to 1
+        points = torch.linspace(0, 1, qtd_points)
+        # Apply the ease-out curve (deceleration)
+        eased_points = 1 - (1 - points) ** curve_strength
+        # Scale and offset the points to the desired range
+        return start_value + (end_value - start_value) * eased_points
 
     def forward(self, X, Y):
 
