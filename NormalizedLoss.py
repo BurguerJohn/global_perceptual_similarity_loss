@@ -51,12 +51,12 @@ class NormalizedTensorLoss(nn.Module):
         return tensor_A, tensor_B
     
     def cosine_similarity(self, A, B):
-      if A.dim() > 3:
-              A = A.view(A.size(0), A.size(1), -1)
-              B = B.view(B.size(0), B.size(1), -1)
+      #if A.dim() > 3:
+      #        A = A.view(A.size(0), A.size(1), -1)
+      #        B = B.view(B.size(0), B.size(1), -1)
 
-      A = F.normalize(A, p=2, dim=1)
-      B = F.normalize(B, p=2, dim=1)
+      #A = F.normalize(A, p=2, dim=1)
+      #B = F.normalize(B, p=2, dim=1)
       
       cosine_sim = F.cosine_similarity(A, B, dim=1)
       
