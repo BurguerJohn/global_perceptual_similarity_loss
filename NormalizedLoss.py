@@ -9,6 +9,13 @@ class NormalizedTensorLoss(nn.Module):
         self.type = type
         self.reduction = reduction
         self.norm = norm
+        
+        if self.type == "l1":
+            print("Using l1")
+        elif self.type == "l2":
+            print("Using l2")
+        else:
+            print("Using wrong reduction")
 
         if self.norm == "minmax":
          print("Using minmax")

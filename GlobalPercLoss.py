@@ -5,7 +5,11 @@ import numpy as np
 import math
 
 class GlobalPercConfig():
-  def __init__(self, start_weight=1.0, end_weight=2.0, curve_force=0, modules_to_hook=[], transform_normalization=None, loss_func=None, print_data=True):
+  def __init__(self, start_weight=1.0, end_weight=2.0, curve_force=0,
+               modules_to_hook=[], transform_normalization=None,
+               loss_func=None, print_data=True,
+               dynamic_normalization=False):
+    
     self.start_weight = start_weight
     self.end_weight = end_weight
     self.curve_force = curve_force
@@ -14,12 +18,14 @@ class GlobalPercConfig():
     self.print_data = print_data
     self.transform_normalization = transform_normalization
     self.loss_func = loss_func
+    self.dynamic_normalization = dynamic_normalization
 
 
 class GlobalPercLoss(torch.nn.Module):
     def __init__(self, model, config):
         super().__init__()
         
+        self.config = config
         self.activations = []
 
         def getActivation():
@@ -49,7 +55,6 @@ class GlobalPercLoss(torch.nn.Module):
         if config.curve_force == 0:
             self.weights = np.linspace(config.start_weight, config.end_weight, count)
         elif config.start_weight <= config.end_weight:
-            #self.weights = self.cosine_interpolation(config.start_weight, config.end_weight, config.curve_force, count)
             self.weights = self.ease_in_curve(config.start_weight, config.end_weight, config.curve_force, count)
         else:
             self.weights = self.ease_out_curve(config.start_weight, config.end_weight, config.curve_force, count)
@@ -60,13 +65,8 @@ class GlobalPercLoss(torch.nn.Module):
 
         self.normalize = config.transform_normalization
         self.loss_func = config.loss_func
-    
-    def cosine_interpolation(self, start, end, strength, num_points):
-        t = torch.linspace(0, 1, num_points)
-        t = (1 - torch.cos(t * math.pi)) / 2  # Apply cosine interpolation
-        t = t.pow(strength)  # Apply strength
-        return start + (end - start) * t
-    
+        self.dynamic_norm_weights = None
+        
     def ease_in_curve(self, start_value, end_value, curve_strength, qtd_points):
         # Generate a tensor of points from 0 to 1
         points = torch.linspace(0, 1, qtd_points)
@@ -83,8 +83,47 @@ class GlobalPercLoss(torch.nn.Module):
         # Scale and offset the points to the desired range
         return start_value + (end_value - start_value) * eased_points
 
-    def forward(self, X, Y):
+    def CreateDynamicWeights(self, tensor):
+        generator = torch.Generator(tensor.device)
+        generator.manual_seed(7)
+        qtd_samples = 10
 
+        dynamic_norm_weights = None
+        for i in range(qtd_samples):
+            t1 = torch.randn(tensor.shape, generator=generator)
+            t2 = torch.randn(tensor.shape, generator=generator)
+            with torch.no_grad():
+                layers_loss = self._forward_features(t1, t2)
+            if dynamic_norm_weights == None:
+                dynamic_norm_weights = [0] * len(layers_loss)
+
+            for ii in range(len(layers_loss)):
+                dynamic_norm_weights[ii] += layers_loss[ii]
+        
+        for i in range(len(dynamic_norm_weights)):
+            dynamic_norm_weights[i] /= qtd_samples
+        
+        return dynamic_norm_weights
+
+
+       
+
+    def forward(self, X, Y):
+        if self.config.dynamic_normalization and self.dynamic_norm_weights == None:
+            self.dynamic_norm_weights = self.CreateDynamicWeights(X)
+
+        layers_loss  = self._forward_features(X, Y)
+        loss = 0
+        
+        for i in range(len(layers_loss)):
+            loss += layers_loss[i] * self.weights[i]
+            if self.config.dynamic_normalization:
+                loss *= self.dynamic_norm_weights[i]
+
+        return loss
+        
+    
+    def _forward_features(self, X, Y):
         X = self.normalize(X)
         Y = self.normalize(Y.detach())
 
@@ -97,11 +136,12 @@ class GlobalPercLoss(torch.nn.Module):
             self.model(Y) 
         Y_VAL = self.activations
 
-        loss = 0
+        layers_loss = []
         for i in range(len(X_VAL)):
             A = X_VAL[i]
             B = Y_VAL[i]
             
-            loss += self.loss_func(A, B) * self.weights[i]
+            loss = self.loss_func(A, B) 
+            layers_loss.append(loss)
               
-        return loss
+        return layers_loss
