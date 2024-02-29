@@ -90,8 +90,8 @@ class GlobalPercLoss(torch.nn.Module):
 
         dynamic_norm_weights = None
         for i in range(qtd_samples):
-            t1 = torch.randn(tensor.shape, generator=generator)
-            t2 = torch.randn(tensor.shape, generator=generator)
+            t1 = torch.randn(tensor.shape, generator=generator, device=tensor.device)
+            t2 = torch.randn(tensor.shape, generator=generator, device=tensor.device)
             with torch.no_grad():
                 layers_loss = self._forward_features(t1, t2)
             if dynamic_norm_weights == None:
@@ -101,7 +101,8 @@ class GlobalPercLoss(torch.nn.Module):
                 dynamic_norm_weights[ii] += layers_loss[ii]
         
         for i in range(len(dynamic_norm_weights)):
-            dynamic_norm_weights[i] /= qtd_samples
+            dynamic_norm_weights[i] = (abs(dynamic_norm_weights[i]) / qtd_samples) + 1e-5
+            
         
         return dynamic_norm_weights
 
@@ -116,9 +117,12 @@ class GlobalPercLoss(torch.nn.Module):
         loss = 0
         
         for i in range(len(layers_loss)):
-            loss += layers_loss[i] * self.weights[i]
+            loss_l = layers_loss[i] * self.weights[i]
             if self.config.dynamic_normalization:
-                loss *= self.dynamic_norm_weights[i]
+                loss_l /= self.dynamic_norm_weights[i]
+                
+            loss += loss_l
+
 
         return loss
         
