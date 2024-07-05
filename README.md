@@ -1,13 +1,12 @@
 # Global Perceptual Similarity Loss
-This code aims to extract the maximum amount of information from an already trained PyTorch model and use this information to help train a new model, simply by replacing the loss function in an existing script.
+This code aims to extract the maximum amount of information from an already trained PyTorch model and use this information to help train a new model, making it simple to replace or add to the the loss function in an existing script.
 
 ## Simple example
 Original Code:
 ```
-loss = nn.L1Loss()
 tensor_1 = torch.rand(1, 3, 504, 504)
 tensor_2 = torch.rand(1, 3, 504, 504)
-loss(tensor_1, tensor_2)
+l2loss = nn.functional.mse_loss(tensor_1, tensor_2)
 ```
 New Code:
 ```
@@ -20,24 +19,22 @@ transform = transforms.Compose([
             transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)), 
         ])
 
-#Create a custom normalized function class
-loss_func = NormalizedTensorLoss("l2")
-
 #Create the configuration for the main class
 config = GlobalPercConfig(start_weight=1.,
-                          end_weight=2.,
-						  curve_force = 3,
+                          end_weight=1.,
+						  curve_force = 1.,
                           modules_to_hook=[nn.Linear, nn.Conv2d, nn.ReLU, nn.GELU],
                           transform_normalization=transform,
-                          loss_func=loss_func,
                           print_data = True
                           )
 
-#Generate the loss
-loss = GlobalPercLoss(model, config)
 tensor_1 = torch.rand(1, 3, 504, 504)
 tensor_2 = torch.rand(1, 3, 504, 504)
-loss(tensor_1, tensor_2)
+
+#Generate the loss
+loss = GlobalPercLoss(model, config)
+model_loss = loss(tensor_1, tensor_2)
+l2loss = nn.functional.mse_loss(tensor_1, tensor_2) * len(loss.weights)
 ```
 
 ## What this actually do:
@@ -68,26 +65,15 @@ The variables **start_weight**, **end_weight** and **curve_force** control the w
 
 
 ## Current state of the project:
-*GlobalPercLoss* is working very well, but I continue testing and trying to develop more optimized codes so it can run lighter during the backward pass. I am still testing various ways to normalize the tensors to improve the results for *NormalizedLoss*, which will likely undergo many changes.
+*GlobalPercLoss* is working very well, but I continue testing and trying to develop more optimized codes so it can run lighter during the backward pass.
 
 
 ## Experimentation with diffusion models:
-I began the development of this project to be used in conjunction with a personal project of mine, which uses RGB images as input.
-
-I started to wonder if this technique would work with diffusion models, so I conducted some quick tests and obtained some interesting results.
-
+This is just a experimentation to input a latent space tensor instead of a RGB image to dino.
 First, I took the DinoV2 model and trained a new "head layer" for it. Instead of accepting RGB images, I trained it to accept the Latent Space of Stable Diffusion 1.5.
 
-After that, all I needed to do was fine-tune an existing model of Stable Diffusion 1.5.
+After that, it can be used to fine-tune an existing model of Stable Diffusion 1.5, but probably will not give good results.
 
 If you like to test training Stable Diffusion 1.5, first download the pre-trained headers for Dino here: [Link](https://drive.google.com/drive/folders/1qcSn9LFIJHeUedPXRAu5DOj5l2Ywxxcn?usp=sharing)
 
 After that look at the *ExampleWithDinoLatentSpace.py* script.
-
-### Example Images:
-
-### What can be improved for Diffusion Loss:
-- The dino header was trained with [Tiny AutoEncoder for Stable Diffusion](https://github.com/madebyollin/taesd). It probably would be better trained with the default encoder for SD 1.5
-- The Dino Header is a bunch of conv2D throw together, a proper header may be able to improve the model.
-- I have zero experiencie training SD models, so someone with more experience may be able to get better results. 
-- Instead of DINO, use a model like [Segment Anything](https://segment-anything.com/) to feed the prompts+latents to the loss function.

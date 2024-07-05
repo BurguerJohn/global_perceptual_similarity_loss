@@ -1,5 +1,4 @@
 from torchvision import transforms
-from NormalizedLoss import NormalizedTensorLoss
 from GlobalPercLoss import GlobalPercConfig, GlobalPercLoss
 
 
@@ -7,6 +6,10 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+
+'''
+This is a WIP experimental code to use Dino with latent space as input.
+'''
 
 class Block(nn.Module):
     def __init__(self, n_in, n_out):
@@ -51,17 +54,13 @@ def DinoWithLatentHeader(header_path, device="cpu"):
   return model
   
   
-model = DinoWithLatentHeader("/path/to/model/file/dino_header_rl.pkl")
+model = DinoWithLatentHeader("dino_header_rl.pkl")
 
 #Will transform the input before feeding it to Dino
 #Dino require a H,W multiple of 14, since we are using a latent of 64,64, we will add 10 pad to each side to make it 84,84
 transform = transforms.Compose([
                     transforms.Pad(10, fill=0, padding_mode='constant')
             ])
-
-#Create a custom normalized function class
-#loss_func can also be nn.L1Loss(), nn.MSELoss(), or any similar, if you don't want to normalize the tensors.
-loss_func = NormalizedTensorLoss("l2")
 
 
 #Create the configuration for the main class
@@ -71,11 +70,10 @@ loss_func = NormalizedTensorLoss("l2")
 #modules_to_hook = [] will make the function try to hook on all available modules possible. 
 
 config = GlobalPercConfig(start_weight=1.,
-                          end_weight=10.,
-                          curve_force = 3,
+                          end_weight=1.,
+                          curve_force = 1,
                           modules_to_hook=[nn.Linear, nn.Conv2d, nn.ReLU, nn.GELU],
                           transform_normalization=transform,
-                          loss_func=loss_func,
                           print_data = True
                           )
 
