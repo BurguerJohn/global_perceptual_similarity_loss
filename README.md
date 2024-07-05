@@ -47,9 +47,6 @@ Since it do a lot more of complex calculations than L1Loss and MSELoss, you can 
 ## How to use:
 Open *ExampleWithDino.py* to see how to use the script. The example use DINOv2 by meta, but you can use any pre-trained model you like.
 
-If you like to test training Stable Diffusion 1.5:
-- first download the pre-trained headers for Dino here: [Link](https://drive.google.com/drive/folders/1qcSn9LFIJHeUedPXRAu5DOj5l2Ywxxcn?usp=sharing)
-- After that look at the *ExampleWithDinoLatentSpace.py* script.
 
 
 ## Weights parameters in GlobalPercConfig:
